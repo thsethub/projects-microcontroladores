@@ -1,0 +1,76 @@
+//Aula1 - Microcontroladores
+
+program Lcd;
+
+// LCD module connections
+var LCD_RS : sbit  at LATB4_bit;
+var LCD_EN : sbit  at LATB5_bit;
+var LCD_D4 : sbit  at LATB0_bit;
+var LCD_D5 : sbit  at LATB1_bit;
+var LCD_D6 : sbit  at LATB2_bit;
+var LCD_D7 : sbit  at LATB3_bit;
+
+var LCD_RS_Direction : sbit at TRISB4_bit;
+var LCD_EN_Direction : sbit at TRISB5_bit;
+var LCD_D4_Direction : sbit at TRISB0_bit;
+var LCD_D5_Direction : sbit at TRISB1_bit;
+var LCD_D6_Direction : sbit at TRISB2_bit;
+var LCD_D7_Direction : sbit at TRISB3_bit;
+// End LCD module connections
+
+var txt1 : array[16] of char;
+    txt2 : array[14]  of char;
+    txt3 : array[8]  of char;
+    txt4 : array[7]  of char;
+    i    : byte;                       // Loop variable
+
+procedure Move_Delay();                // Function used for text moving
+  begin
+    Delay_ms(500);                     // You can change the moving speed here
+  end;
+
+  begin
+    ANCON0 := 0;                       // Configure PORTB pins as digital
+    ANCON1 := 0;
+    ANCON2 := 0;
+
+    txt1 := 'mikroElektronika';
+    txt2 := 'EasyPIC PRO v7';
+    txt3 := 'Lcd4bit';
+    txt4 := 'example';
+  
+    Lcd_Init();                        // Initialize LCD
+    Lcd_Cmd(_LCD_CLEAR);               // Clear display
+    Lcd_Cmd(_LCD_CURSOR_OFF);          // Cursor off
+    LCD_Out(1,6,txt3);                 // Write text in first row
+    LCD_Out(2,6,txt4);                 // Write text in second row
+    Delay_ms(2000);
+    Lcd_Cmd(_LCD_CLEAR);               // Clear display
+
+    LCD_Out(1,1,txt1);                 // Write text in first row
+    Lcd_Out(2,2,txt2);                 // Write text in second row
+    Delay_ms(500);
+
+    // Moving text
+    for i:=0 to 3 do                   // Move text to the right 4 times
+      begin
+        Lcd_Cmd(_LCD_SHIFT_RIGHT);
+        Move_Delay();
+      end;
+
+    while TRUE do                      // Endless loop
+      begin
+        for i:=0 to 7 do               // Move text to the left 8 times
+          begin
+            Lcd_Cmd(_LCD_SHIFT_LEFT);
+            Move_Delay();
+          end;
+
+        for i:=0 to 7 do               // Move text to the right 8 times
+          begin
+            Lcd_Cmd(_LCD_SHIFT_RIGHT);
+            Move_Delay();
+          end;
+
+      end;
+  end.

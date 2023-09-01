@@ -1,0 +1,13 @@
+a - Ativa a saída B1
+A - Desativa a saída B1
+S - Toca um tom de 3kHz por 1s
+D - Envia o valor analógico do conversor ad
+T - Envia a temperatura pela UART
+O - Acende/Apaga o led B3
+M - Mostrar Foi no display
+m - Mostrar os bits da porta B
+c - Desliga o cooler
+C - Liga o cooler
++ - Aumenta a velocidade do cooler
+- - Diminui a velocidade do cooler
+t - Liga/desliga o aquecimento

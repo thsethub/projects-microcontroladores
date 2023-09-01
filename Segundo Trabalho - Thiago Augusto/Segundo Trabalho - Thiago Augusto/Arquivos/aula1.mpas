@@ -1,0 +1,200 @@
+//Aula1 - Microcontroladores
+
+program Lcd;
+
+// LCD module connections
+var LCD_RS : sbit  at RE2_bit;
+var LCD_EN : sbit  at RE1_bit;
+var LCD_D4 : sbit  at RD4_bit;
+var LCD_D5 : sbit  at RD5_bit;
+var LCD_D6 : sbit  at RD6_bit;
+var LCD_D7 : sbit  at RD7_bit;
+
+var LCD_RS_Direction : sbit at TRISE2_bit;
+var LCD_EN_Direction : sbit at TRISE1_bit;
+var LCD_D4_Direction : sbit at TRISD4_bit;
+var LCD_D5_Direction : sbit at TRISD5_bit;
+var LCD_D6_Direction : sbit at TRISD6_bit;
+var LCD_D7_Direction : sbit at TRISD7_bit;
+// End LCD module connections
+
+var txt1 : array[16] of char;
+    txt2 : array[14]  of char;
+    txt3 : array[8]  of char;
+    txt4 : array[7]  of char;
+    txt5 : array[4]  of char;
+    ligacooler       :  integer;
+    ch   : char;
+    val, temp : dword;
+    duty, bt  : byte;
+    v     : word;
+
+  begin
+    TRISB  := 0;
+    PORTB  := %00000000;
+    TRISC  := 0;
+    PORTC  := 0;
+    val    := 0;
+    ch     :='0';
+    duty   :=25;
+    bt     :=0;
+    v      :=0;
+    txt1 := 'Microcontrolador';
+    txt2 := '';
+    txt3 := '';
+    txt4 := 'example';
+    txt5 := 'Foi';
+
+    adc_init();
+    Lcd_Init();                        // Inicia o LCD
+    PWM1_Start(); //INICIO DO PWM
+    PWM1_init(5000);
+    UART1_Init(9600);
+    Lcd_Cmd(_LCD_CLEAR);               // Limpa display
+    Lcd_Cmd(_LCD_CURSOR_OFF);          // Cursor off
+    sound_init(PORTC,1);
+    LCD_Out(1,1,txt1);
+    
+    
+    while TRUE do                      // Endless loop
+      begin
+      if (UART1_Data_Ready() <> 0) then
+      begin
+      ch:=UART1_READ();
+      LCD_Out(1,1,txt1);
+      UART1_Write(ch);
+      UART1_Write(10);
+      UART1_Write(13);
+      
+
+      //LIGA B1
+      if  ch='a'  then
+      begin
+      PORTB.1:=1  ;
+      end;
+      //DESLIGA B1
+      if  ch='A'  then
+      begin
+      PORTB.1:=0  ;
+      end;
+      //LIGA B3 E DESLIGA B3
+      if  ch='O'  then
+      begin
+           if PORTB.3 = 1  then
+              PORTB.3 := 0
+           else
+              PORTB.3 := 1
+      end;
+      //MOSTRA OS BITS DA PORTB
+      if ch='m' then
+      begin
+           if PORTB = %00000000 then
+              begin
+              txt2:='00000000';
+              Lcd_Cmd(_LCD_CLEAR);
+              lcd_out(1,1,txt1);
+              lcd_out(2,1,txt2);
+              end;
+           if PORTB = %00000010 then
+              begin
+              txt2:='00000010';
+              Lcd_Cmd(_LCD_CLEAR);
+              lcd_out(1,1,txt1);
+              lcd_out(2,1,txt2);
+              end;
+           if PORTB = %00001010 then
+              begin
+              txt2:='00001010';
+              Lcd_Cmd(_LCD_CLEAR);
+              lcd_out(1,1,txt1);
+              lcd_out(2,1,txt2);
+              end;
+           if PORTB = %00001000 then
+              begin
+              txt2:='00001000';
+              Lcd_Cmd(_LCD_CLEAR);
+              lcd_out(1,1,txt1);
+              lcd_out(2,1,txt2);
+              end;
+      end;
+      //MANDA A MENSAGEM FOI PARA O LCD
+      if ch='M' then
+      begin
+      Lcd_Cmd(_LCD_CLEAR);
+      LCD_Out(2,1,txt5);
+      lcd_out(1,1,txt1);
+      end;
+      //LIGA O BUZER POR 1 SEGUNDO
+      if ch='S' then
+      begin
+      sound_play(3000,1000);
+      end;
+      //MANDA O VALOR DO ADC PARA O PUTTY COM3
+      if  ch='D' then
+      begin
+      v:=ADC_Read(0);
+      wordtostr(v,txt2);
+      UART1_Write_Text(txt2);
+      UART1_Write(10);
+      UART1_Write(13);
+      end;
+      //MANDA A TEMPERATURA PELO ADC PARA O PUTTY COM3
+      if  ch='T' then
+      begin
+      temp:=adc_read(2);
+      temp:=(temp*5*100)/1023;
+      inttostr(temp,txt4);
+      UART1_Write_Text(txt4);
+      UART1_Write(10);
+      UART1_Write(13);
+      end;
+      //ATIVA O AQUECIMENTO
+      if ch='t' then
+      begin
+      if PORTC.5 = 1  then
+              PORTC.5 := 0
+           else
+              PORTC.5 := 1
+      end;
+      //DESLIGA O COOLER
+      if ch='c' then
+      begin
+      ligacooler:=0;
+      PWM1_Set_Duty(0);
+      end;
+      //LIGA O COOLER
+      if ch='C' then
+      begin
+      ligacooler:=1;
+      PWM1_Set_Duty(duty);
+      PWM1_start();
+      end;
+      //AUMENTA A VELOCIDADE DO COOLER
+      if ligacooler = 1 then
+      begin
+      if duty < 255 then
+      begin
+          if ch='+' then
+           begin
+             duty:= duty+10;
+             PWM1_Set_Duty(duty);
+           end;
+      end;
+      end;
+      //DIMINUI A VELOCIDADE DO COOLER ATÉ 5
+      if ligacooler = 1 then
+      begin
+      if    duty>5 then
+      begin
+           if  ch='-' then
+           begin
+           duty:=duty-10;
+           PWM1_Set_Duty(duty);
+           end;
+      end;
+      end;
+end;
+
+      Delay_ms(100);
+      end;
+  end.

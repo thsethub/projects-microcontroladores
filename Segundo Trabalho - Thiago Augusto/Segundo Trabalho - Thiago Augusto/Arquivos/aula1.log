@@ -1,0 +1,14 @@
+0	1	mPPic.exe -MSF -DBG -pP16F877A -Y -DL -O11111114 -fo4 -N"C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos\aula1.mpppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroPascal PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroPascal PRO for PIC\Uses\P16\" -SP"C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos\" -SP"C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos 2.0\" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CType.mcl" "__Lib_String.mcl" "__Lib_CStdlib.mcl" "__Lib_MemManager.mcl" "__Lib_Conversions.mcl" "__Lib_Time.mcl" "__Lib_Trigon.mcl" "__Lib_Trigonometry.mcl" "__Lib_Button.mcl" "__Lib_Keypad4x4.mcl" "__Lib_Manchester.mcl" "__Lib_OneWire.mcl" "__Lib_PS2.mcl" "__Lib_Sound.mcl" "__Lib_SoftI2C.mcl" "__Lib_SoftSPI.mcl" "__Lib_SoftUART.mcl" "__Lib_ADC_A_C.mcl" "__Lib_EEPROM.mcl" "__Lib_FLASH_RW.mcl" "__Lib_I2C_c34.mcl" "__Lib_PWM_c21.mcl" "__Lib_SPI_c345.mcl" "__Lib_UART_c67.mcl" "__Lib_PortExpander.mcl" "__Lib_CANSPI.mcl" "__Lib_CF.mcl" "__Lib_GlcdFonts.mcl" "__Lib_Glcd.mcl" "__Lib_LcdConsts.mcl" "__Lib_Lcd.mcl" "__Lib_RS485.mcl" "__Lib_S1D13700.mcl" "__Lib_T6963C.mcl" "__Lib_T6963C_Consts.mcl" "__Lib_SPIGlcd.mcl" "__Lib_SPILcd.mcl" "__Lib_SPILcd8.mcl" "__Lib_SPIT6963C.mcl" "__Lib_SPIT6963C_Const.mcl" "__Lib_EthEnc28j60.mcl" "__Lib_EthEnc24j600.mcl" "__Lib_TouchPanel.mcl" "aula1.mpas"	 
+diagnostics: 0	155	Available RAM: 352 [bytes], Available ROM: 8192 [bytes]	 
+diagnostics: 0	133	Compilation Started	C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos\aula1.mpas
+hint: 1	1015	Hint: Compiling unit "C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos\aula1.mpas"	aula1.mpas
+warning: 52	1506	Warning: Generated baud rate is 9615 bps (error = 0.16 percent)	aula1.mpas
+hint: 200	1010	Hint: Unit "aula1.mpas" has been recompiled	aula1.mpas
+diagnostics: 0	134	Compiled Successfully	C:\Users\Pichau\Desktop\Segundo Trabalho - Thiago Augusto\Arquivos\aula1.mpas
+diagnostics: 0	139	All files Compiled in 47 ms	 
+hint: 0	1144	Used RAM (bytes): 91 (26%)  Free RAM (bytes): 261 (74%)	Used RAM (bytes): 91 (26%)  Free RAM (bytes): 261 (74%)
+hint: 0	1144	Used ROM (program words): 2302 (28%)  Free ROM (program words): 5890 (72%)	Used ROM (program words): 2302 (28%)  Free ROM (program words): 5890 (72%)
+diagnostics: 0	145	Project Linked Successfully	aula1.mpppi
+diagnostics: 0	140	Linked in 62 ms	 
+diagnostics: 0	141	Project 'aula1.mpppi' completed: 156 ms	 
+diagnostics: 0	103	Finished successfully: 28 ago 2023, 12:28:32	aula1.mpppi
