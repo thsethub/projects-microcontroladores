@@ -1,5 +1,5 @@
 PROCESSOR       16F877A
-	RADIX           DEC			;define para decimal, serve para setar como decimal quando n„o for bin·rio(b)
+	RADIX           DEC			;define para decimal, serve para setar como decimal quando n√£o for bin√°rio(b)
 
 #INCLUDE <p16F877A.inc>	
 	__config	0x3F32
@@ -10,41 +10,49 @@ PROCESSOR       16F877A
 	org 0X04					
 	goto inter
 
-	org 0x20					;alocaÁ„o de memÛria livre para uso
-temp 	res 2					;Vari·vel para a rotina de atraso
-segu	res 1					;Conta as unidades de segundo.
-segd	res 1					;Conta as dezenas de segundo.
-minU	res 1
+	org 0x20					;aloca√ß√£o de mem√≥ria livre para uso
+temp 	res 2					
+segu	res 1					
+segd	res 1					
+minU	res 1					
 minD	res 1
 horaU	res 1
 horaD	res 1
-
-w_temp	res 1					;Salva o que est· no acumulador
-s_temp	res 1					;Salva o que est· no STATUS
-flags	res 1					;Registrador auxiliar
+alarm	res	1
+alarmUmin	res 1
+alarmDmin	res 1
+alarmUhora	res	1
+alarmDhora	res	1
+buser	res	1
+w_temp	res 1					
+s_temp	res 1					
+flags	res 1					
 display	res 1
 
 inicio
 
-	banksel	TRISD				;Seleciona o banksel do TRISD, TRISD È o configura PORTD.
-	movlw	00000000b			;Bit que estiver em 0 È saÌda. Todos os pinos da PORTD e PORTA ser„o saÌdas.
-	movwf	TRISD				;Movendo os bits do acumulador para o registrador.
+	banksel	TRISD				
+	movlw	00000000b			
+	movwf	TRISD				
 	movwf	TRISA
-	movlw	6					;Ao mover 6 para o ADCON1, configura a PORTA como porta digital.
+	movwf	TRISC
+	movlw	6					
 	movwf	ADCON1
-	bsf	PIE1,TMR1IE			    ;Liga interrupÁ„o timer1.
-	bsf	INTCON,PEIE		     	;Liga int. perifÈrico.
-	bsf	INTCON,GIE		    	;Liga int. geral.
+;interrup√ß√µes
+	bsf	PIE1,TMR1IE			    
+	bsf	INTCON,PEIE		     	
+	bsf	INTCON,GIE		    	
 
-	banksel	PORTD				;Seleciona o banco da porta D
-	movlw	00000000b			;Move 0 para o acumulador
-	movwf	PORTD				;Zera a porta D
-	movwf	PORTA				;Zera a porta B
-	clrf	T1CON				;Garantir que tudo inicie em zero.
+	banksel	PORTD				
+	movlw	00000000b			
+	movwf	PORTD				
+	movwf	PORTA				
+	movwf	PORTC
 
-	bsf	T1CON,TMR1ON		    ;Liga TRM1.				
-	bsf	T1CON,T1CKPS1           ;Configura o preescale para 1:8
-	bsf	T1CON,T1CKPS0			;Configura o preescale para 1:8
+	clrf	T1CON				
+	bsf	T1CON,TMR1ON		    			
+	bsf	T1CON,T1CKPS1           
+	bsf	T1CON,T1CKPS0			
 
 	clrf	segu				;Limpa os registradores
 	clrf	segd
@@ -53,6 +61,12 @@ inicio
 	clrf	horaU
 	clrf	horaD
 	clrf	flags
+	clrf	buser
+	clrf	alarm
+	clrf	alarmDmin
+	clrf	alarmUmin
+	clrf	alarmDhora
+	clrf	alarmUhora
 	clrf	display
 	clrf	s_temp
 	clrf	w_temp
@@ -61,7 +75,7 @@ inicio
 
 
 exibirHHMM
-;--------------------------------- EXIBI«√O --------------------------------------------------
+;--------------------------------- EXIBI√á√ÉO --------------------------------------------------
 ;	DISP4 = PORTA,5				-Unidade de segundo
 ;	DISP3 = PORTA,4				-Dezena de segundo
 ;	DISP2 = PORTA,3				-Unidade de Minuto
@@ -70,44 +84,61 @@ exibirHHMM
 
 		call	contagens
 
-		;TECLA QUE CHAMA A FUN«√O MINUTOS SEGUNDOS
+		;PARTE QUE CHAMA A FUN√áAO DE ALARME
+		movf	alarm,w		
+		xorlw	1
+		btfss	STATUS,Z	
+		goto	$+4			
+		pageselw	funAlarme	
+		call	funAlarme			
+		clrf	PCLATH
+
+		;TECLA QUE CHAMA A FUN√á√ÉO MINUTOS SEGUNDOS
 	btfsc	PORTB,3
 	goto	$+4
 	btfss	PORTB,3
 	goto	$-1
 	goto 	exibirMMSS
 
-	bcf	PORTA,4					;Desliga o DISP3
+	bcf	PORTA,4					
 	bcf	PORTA,3
 	bcf PORTA,2
-	bsf	PORTA,5					;Liga o DISP4.
+	bsf	PORTA,5					
 
 	pageselw	hex7seg
-	movf 	minU,w				;Rotaciona para direita o que est· em segu, e salva no acumulador
+	movf 	minU,w				;Rotaciona para direita o que est√° em segu, e salva no acumulador
 	call 	hex7seg				;Chamando a subrotina.
 	clrf	PCLATH
 	movwf	PORTD				;Movendo do acumulador para a PORTD.
 
-	call	atraso				;Atraso para manter a primeira tela do display ligada
+				movf	alarm,w		
+				xorlw	0			
+				btfss	STATUS,Z	
+				goto	$+3			
+				bcf		PORTD,7		
+				goto	$+2			
+				bsf		PORTD,7		
+
+	call	atraso				
 
 
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,3
 	bcf PORTA,2
-	bsf	PORTA,4					;segundo display de 7 segmentos.
+	bsf	PORTA,4					
 	
 	pageselw	hex7seg
-	movf	minD,w				;Move o que est· segd para o acumulador
-	call 	hex7seg				;Chamando a subrotina.
+	movf	minD,w				
+	call 	hex7seg				
 	clrf	PCLATH
-	movwf	PORTD				;Movendo do acumulador para a PORTD.
+	movwf	PORTD				
 
-	call	atraso				;Atraso para manter a segunda tela do display ligada
+	call	atraso				
 
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,4
 	bcf PORTA,2
-	bsf	PORTA,3					;segundo display de 7 segmentos.
+	bsf	PORTA,3					
 
 	pageselw	hex7seg
 	movf		horaU,w
@@ -122,10 +153,10 @@ exibirHHMM
 
 	call	atraso
 	
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,4
 	bcf PORTA,3
-	bsf	PORTA,2					;segundo display de 7 segmentos.
+	bsf	PORTA,2					
 
 	pageselw	hex7seg
 	movf	horaD,w
@@ -138,54 +169,68 @@ exibirHHMM
 goto	exibirHHMM
 
 exibirMMSS
-;--------------------------------- EXIBI«√O --------------------------------------------------
+;--------------------------------- EXIBI√á√ÉO --------------------------------------------------
 ;	DISP4 = PORTA,5				-Unidade de segundo
 ;	DISP3 = PORTA,4				-Dezena de segundo
 ;	DISP2 = PORTA,3				-Unidade de Minuto
 ;	DISP1 = PORTA,2				-Dezena de Minuto
 	;Horas e Minutos
-		pageselw contagens
 		call	contagens
+	
+		;PARTE QUE CHAMA A FUN√áAO DE ALARME
+		movf	alarm,w		
+		xorlw	1
+		btfss	STATUS,Z	
+		goto	$+4			
+		pageselw	funAlarme
+		call	funAlarme			
 		clrf	PCLATH
 
-		;TECLA QUE CHAMA A FUN«√O MINUTOS SEGUNDOS
+		;TECLA QUE CHAMA A FUN√á√ÉO HORAS E MINUTOS
 	btfsc	PORTB,3
 	goto	$+4
 	btfss	PORTB,3
 	goto	$-1
 	goto 	exibirHHMM
 
-	bcf	PORTA,4					;Desliga o DISP3
+	bcf	PORTA,4					
 	bcf	PORTA,3
 	bcf PORTA,2
-	bsf	PORTA,5					;Liga o DISP4.
+	bsf	PORTA,5					
 
 	pageselw	hex7seg
-	rrf 		segu,w				;Rotaciona para direita o que est· em segu, e salva no acumulador
-	call 		hex7seg				;Chamando a subrotina.
+	rrf 		segu,w				
+	call 		hex7seg				
 	clrf		PCLATH
-	movwf		PORTD				;Movendo do acumulador para a PORTD.
+	movwf		PORTD				
 
-	call	atraso				;Atraso para manter a primeira tela do display ligada
+				movf	alarm,w		
+				xorlw	0			
+				btfss	STATUS,Z	
+				goto	$+3			
+				bcf		PORTD,7		
+				goto	$+2			
+				bsf		PORTD,7		
 
+	call	atraso				
 
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,3
 	bcf PORTA,2
-	bsf	PORTA,4					;segundo display de 7 segmentos.
+	bsf	PORTA,4					
 	
 	pageselw	hex7seg
-	movf		segd,w				;Move o que est· segd para o acumulador
-	call 		hex7seg				;Chamando a subrotina.
+	movf		segd,w				
+	call 		hex7seg				
 	clrf		PCLATH
-	movwf		PORTD				;Movendo do acumulador para a PORTD.
+	movwf		PORTD				
 
-	call	atraso				;Atraso para manter a segunda tela do display ligada
+	call	atraso				
 
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,4
 	bcf PORTA,2
-	bsf	PORTA,3					;segundo display de 7 segmentos.
+	bsf	PORTA,3					
 
 	pageselw	hex7seg
 	movf		minU,w
@@ -200,10 +245,10 @@ exibirMMSS
 
 	call	atraso
 	
-	bcf	PORTA,5					;desliga o primeiro display de 7 segmentos.
+	bcf	PORTA,5					
 	bcf PORTA,4
 	bcf PORTA,3
-	bsf	PORTA,2					;segundo display de 7 segmentos.
+	bsf	PORTA,2					
 
 	pageselw	hex7seg
 	movf		minD,w
@@ -216,9 +261,9 @@ exibirMMSS
 	goto	exibirMMSS
 
 atraso							
-	movlw	499/256+1			;move para o acumulador w. Essa divis„o È feita na intenÁ„o de que possamos escrever o n˙mero exato. Quantas vezes a parte alta conta 256.
+	movlw	499/256+1			;move para o acumulador w. Essa divis√£o √© feita na inten√ß√£o de que possamos escrever o n√∫mero exato. Quantas vezes a parte alta conta 256.
 	movwf	temp				;passa do acumulador para o registrador.
-	movlw	499%256				;resto da divis„o.
+	movlw	499%256				;resto da divis√£o.
 	movwf	temp+1				;segundo byte de temp, parte baixa.
 
 	nop
@@ -227,102 +272,99 @@ atraso
 	nop
 	nop
 
-	decf	temp+1,f			;decrementa 1 do registrador temp+1 e guarda no prÛprio registrador.
-	btfsc	STATUS,Z			;se o resultado do decremento n„o tiver dado zero, ele pula o prÛximo passo.
+	decf	temp+1,f			;decrementa 1 do registrador temp+1 e guarda no pr√≥prio registrador.
+	btfsc	STATUS,Z			;se o resultado do decremento n√£o tiver dado zero, ele pula o pr√≥ximo passo.
 
-	decfsz	temp,f				;se o bit Z de STATUS estiver em 1, quando a conta der 0, pula o prÛximo comando.
-	goto	$-8					;volta 8 linhas, atÈ o temporizador ser zerado.
+	decfsz	temp,f				;se o bit Z de STATUS estiver em 1, quando a conta der 0, pula o pr√≥ximo comando.
+	goto	$-8					;volta 8 linhas, at√© o temporizador ser zerado.
 
 	return
 
 inter
-; Entra na interrupÁ„o a cada meio segundo
+; Entra na interrup√ß√£o a cada meio segundo
 
 ;------------------------------- Salva contexto ---------------------------
-	movwf	w_temp				;salva o que est· no acumulador
-	swapf	STATUS,w			;Usa-se o swapf para que o status n„o seja modificado ao mover para o acumulador, j· que o movf mexe na ula,
-	movwf	s_temp              ;...Por exemplo, se tiver 0 no acumulador, o bit Z do status vai para 1, modificando o prÛprio STATUS.
+	movwf	w_temp				;salva o que est√° no acumulador
+	swapf	STATUS,w			;Usa-se o swapf para que o status n√£o seja modificado ao mover para o acumulador, j√° que o movf mexe na ula,
+	movwf	s_temp              ;...Por exemplo, se tiver 0 no acumulador, o bit Z do status vai para 1, modificando o pr√≥prio STATUS.
 ;--------------------------------------------------------------------------
 
 	bcf	PIR1,TMR1IF				;Zera o contador do timer, para que possa estourar novamente
 
 	incf	segu				;Incrementa segu
 
-	nop							;nops para ajustar o tempo de interrupÁ„o em meio segundo
+	nop							;nops para ajustar o tempo de interrup√ß√£o em meio segundo
 	nop
 	nop
 
-	movlw	3038/256            ;Inicia o contador do timer, ajustando para que a interrupÁ„o dure meio segundo.
-	movwf	TMR1H	            ;Move o que est· no acumulador para a parte alta do TMR1
-	movlw	3038%256			;Resto da divis„o para o acumulador
-	movwf	TMR1L				;Move o que est· no acumulador para a parte baixa do TMR1
+	movlw	3038/256            ;Inicia o contador do timer, ajustando para que a interrup√ß√£o dure meio segundo.
+	movwf	TMR1H	            ;Move o que est√° no acumulador para a parte alta do TMR1
+	movlw	3038%256			;Resto da divis√£o para o acumulador
+	movwf	TMR1L				;Move o que est√° no acumulador para a parte baixa do TMR1
 
-;Respons·vel pela troca de ligado e desligado do ponto, se alternando pela segunda vez que passa pela interrupÁ„o.
+;Respons√°vel pela troca de ligado e desligado do ponto, se alternando pela segunda vez que passa pela interrup√ß√£o.
 
-	btfss	segu,1				; O bit 1 de segu, troca toda vez que È incrementa 2 vezes, o que dura 1 segundo.
-	bcf		flags,0				; » executado se o bit 1 de segu for 0
+	btfss	segu,1				; O bit 1 de segu, troca toda vez que √© incrementa 2 vezes, o que dura 1 segundo.
+	bcf		flags,0				; √à executado se o bit 1 de segu for 0
 	btfsc	segu,1
-	bsf		flags,0				; … executado se o bit 1 de segu for 1
+	bsf		flags,0				; √â executado se o bit 1 de segu for 1
 			
 ;------------------------ Restaura contexto -------------------------------------------------------
 
-	swapf	s_temp,w			;Faz o swap novamente, voltando ao normal, j· que essa instruÁ„o inverte a parte baixa com a parte alta
-	movwf	STATUS				;Retorna o valor do status para antes de entrar na interrupÁ„o
-	swapf	w_temp,f			;Retorna o valor que estava no acumulador antes de entrar na interrupÁ„o
+	swapf	s_temp,w			;Faz o swap novamente, voltando ao normal, j√° que essa instru√ß√£o inverte a parte baixa com a parte alta
+	movwf	STATUS				;Retorna o valor do status para antes de entrar na interrup√ß√£o
+	swapf	w_temp,f			;Retorna o valor que estava no acumulador antes de entrar na interrup√ß√£o
 	swapf	w_temp,w
 
 	retfie
 
 ajustHoraD
-;	DISP4 = PORTA,5				-Unidade de segundo
-;	DISP3 = PORTA,4				-Dezena de segundo
-;	DISP2 = PORTA,3				-Unidade de Minuto
-;	DISP1 = PORTA,2				-Dezena de Minuto
-
 	bcf		PORTA,5
 	bcf		PORTA,4
 	bcf		PORTA,3
 	bsf		PORTA,2
 
+;se for 2 passa para o ajuste de hora limitado
 		btfsc	PORTB,0
-		goto	$+4
+		goto	$+12
+		movf	horaD,w
+		xorlw	2
+		btfss	STATUS,Z
+		goto	$+5
+		btfss	PORTB,0
+		goto	$-1
+		clrf	horaU
+		goto 	ajustHoraU2
+	;passa para o ajuste de hora
 		btfss	PORTB,0
 		goto	$-1
 		goto	ajustHoraU
 
-	;Validador de entrada(se for 2, a entrada ser· limitada)
-		btfsc	PORTB,0
-		goto	$+7
-		movf	horaD,w
-		xorlw	2
-		btfss	STATUS,Z
-		goto	$+3
-		btfss	PORTB,0
-		goto	$-1
-	;Limita a decrementaÁ„o	
+	;limita a decrementa√ß√£o em 2(de 0 vai para 2)
 		movf	horaD,w
 		xorlw	0
 		btfss	STATUS,Z
 		goto	$+7
 		btfsc	PORTB,1
-		goto	$+5
+		goto	$+10
 		btfss	PORTB,1
 		goto	$-1
 		movlw	2		
 		movwf	horaD
-	;DecrementaÁ„o
+	;decrementar
 		btfsc	PORTB,1
 		goto	$+4
 		btfss	PORTB,1
 		goto	$-1
 		decf	horaD
-	;Limita a incrementaÁ„o
+
+	;limita a incrementa√ß√£o em 2(de 2 vai para 0) 
 		movf	horaD,w
 		xorlw	3
 		btfss	STATUS,Z
 		goto	$+2
 		clrf	horaD
-	;IncrementaÁ„o
+	;incrementar
 		btfsc	PORTB,2
 		goto	$+4
 		btfss	PORTB,2
@@ -343,7 +385,14 @@ ajustHoraU
 	bcf		PORTA,4
 	bcf		PORTA,2
 	bsf		PORTA,3
-	;lÛgica para limitar Hora
+
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajustminD
+
+	;l√≥gica para limitar Hora
 		movf	horaU,w
 		xorlw	0			
 		btfss	STATUS,Z
@@ -354,31 +403,20 @@ ajustHoraU
 		goto	$-1
 		movlw	9		
 		movwf	horaU
-	;limita a decrementaÁ„o
-		movf	horaU,w
-		xorlw	0
-		btfss	STATUS,Z
-		goto	$+7
-		btfsc	PORTB,1
-		goto	$+10
-		btfss	PORTB,1
-		goto	$-1
-		movlw	3		
-		movwf	horaU
-	;decrementaÁ„o
+	;decrementa√ß√£o
 		btfsc	PORTB,1
 		goto	$+4
 		btfss	PORTB,1
 		goto	$-1
 		decf	horaU
 
-	;limita a incrementaÁ„o
+	;limita a incrementa√ß√£o
 		movf	horaU,w
-		xorlw	4
+		xorlw	10
 		btfss	STATUS,Z
 		goto	$+2
 		clrf	horaU
-	;incrementaÁ„o
+	;incrementa√ß√£o
 		btfsc	PORTB,2
 		goto	$+4
 		btfss	PORTB,2
@@ -395,19 +433,445 @@ ajustHoraU
 
 	
 	goto	ajustHoraU
-;ajustalarm
+ajustHoraU2
+	bcf		PORTA,5
+	bcf		PORTA,4
+	bcf		PORTA,2
+	bsf		PORTA,3
 
-;goto ajusalarm
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajustminD
 
-contagens
-	;bot„o para parar contagem
-		movlw	00000001b
+	;l√≥gica para limitar Hora
+		movf	horaU,w
+		xorlw	0			
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	3	
+		movwf	horaU
+	;decrementa√ß√£o
 		btfsc	PORTB,1
 		goto	$+4
 		btfss	PORTB,1
 		goto	$-1
-		xorwf T1CON,f
+		decf	horaU
 
+	;limita a incrementa√ß√£o
+		movf	horaU,w
+		xorlw	4
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	horaU
+	;incrementa√ß√£o
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	horaU
+
+		pageselw	hex7seg
+		movf	horaU,w
+		call	hex7seg
+		clrf	PCLATH
+		movwf	PORTD
+
+		call	atraso
+
+	
+	goto	ajustHoraU2
+
+ajustminD
+	bcf		PORTA,5
+	bcf		PORTA,3
+	bcf		PORTA,2
+	bsf		PORTA,4
+	;bot√£o para ajust de unidades de minutos
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajustminU
+	
+		;limita a decrementa√ß√£o
+		movf	minD,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	5		
+		movwf	minD
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	minD
+
+	;limita a incrementa√ß√£o
+		movf	minD,w
+		xorlw	6
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	minD
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	minD
+
+		pageselw	hex7seg
+		movf	minD,w
+		call	hex7seg
+		clrf	PCLATH
+		movwf	PORTD
+
+	call	atraso
+goto ajustminD
+
+ajustminU
+	bcf		PORTA,4
+	bcf		PORTA,3
+	bcf		PORTA,2
+	bsf		PORTA,5
+	;volta a exibir HHMM
+		btfsc	PORTB,0
+		goto	$+6
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajualarmhoraD
+
+	;limita a decrementa√ß√£o
+		movf	minU,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	9		
+		movwf	minU
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	minU
+
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	minU
+	;limita a incrementa√ß√£o 
+		movf	minU,w		
+		xorlw	10			
+		btfss	STATUS,Z	
+		goto	$+2		
+		clrf	minU			
+
+	pageselw	hex7seg
+	movf	minU,w
+	call	hex7seg
+	clrf	PCLATH
+	movwf	PORTD
+
+	call	atraso
+goto ajustminU
+
+ajualarmhoraD
+
+	bcf		PORTA,5
+	bcf		PORTA,4
+	bcf		PORTA,3
+	bsf		PORTA,2
+	;L√ìGICA PARA ALTERNAR NO VALOR DE alarmUhora entre 1 e 2
+;se for 2 passa para o ajuste de hora limitado
+		btfsc	PORTB,0
+		goto	$+12
+		movf	alarmDhora,w
+		xorlw	2
+		btfss	STATUS,Z
+		goto	$+5
+		btfss	PORTB,0
+		goto	$-1
+		clrf	alarmUhora
+		goto 	ajualarmhoraU2
+	;passa para o ajuste de hora
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajualarmhoraU
+
+	;limita a decrementa√ß√£o
+		movf	alarmDhora,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	2		
+		movwf	alarmDhora
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	alarmDhora
+
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	alarmDhora
+	;limita a incrementa√ß√£o 
+		movf	alarmDhora,w
+		xorlw	3
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	alarmDhora
+		
+	pageselw	hex7seg
+	movf	alarmDhora,w
+	call	hex7seg
+	clrf	PCLATH
+	movwf	PORTD
+
+	call	atraso
+
+
+goto ajualarmhoraD
+
+ajualarmhoraU
+	bcf		PORTA,5
+	bcf		PORTA,4
+	bcf		PORTA,2
+	bsf		PORTA,3
+
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajualarmDmin
+
+		movf	alarmUhora,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	9		
+		movwf	alarmUhora
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	alarmUhora
+
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	alarmUhora
+	;limita a incrementa√ß√£o
+		movf	alarmUhora,w
+		xorlw	10
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	alarmUhora
+
+		pageselw	hex7seg
+		movf	alarmUhora,w
+		call	hex7seg
+		clrf	PCLATH
+		movwf	PORTD
+
+		call	atraso
+
+	
+	goto	ajualarmhoraU
+ajualarmhoraU2
+	bcf		PORTA,5
+	bcf		PORTA,4
+	bcf		PORTA,2
+	bsf		PORTA,3
+
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajualarmDmin
+
+	;l√≥gica para limitar Hora
+		movf	alarmUhora,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	3		
+		movwf	alarmUhora
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	alarmUhora
+
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	alarmUhora
+	;limita a incrementa√ß√£o
+		movf	alarmUhora,w
+		xorlw	4
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	alarmUhora
+
+		pageselw	hex7seg
+		movf	alarmUhora,w
+		call	hex7seg
+		clrf	PCLATH
+		movwf	PORTD
+
+		call	atraso
+
+	
+	goto	ajustHoraU2
+
+ajualarmDmin
+	bcf		PORTA,5
+	bcf		PORTA,3
+	bcf		PORTA,2
+	bsf		PORTA,4
+	;bot√£o para ajust de unidades de minutos
+		btfsc	PORTB,0
+		goto	$+4
+		btfss	PORTB,0
+		goto	$-1
+		goto	ajualarmUmin
+	
+		;limita a decrementa√ß√£o
+		movf	alarmDmin,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	5		
+		movwf	alarmDmin
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	alarmDmin
+
+	;limita a incrementa√ß√£o
+		movf	alarmDmin,w
+		xorlw	6
+		btfss	STATUS,Z
+		goto	$+2
+		clrf	alarmDmin
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	alarmDmin
+
+		pageselw	hex7seg
+		movf	alarmDmin,w
+		call	hex7seg
+		clrf	PCLATH
+		movwf	PORTD
+
+	call	atraso
+goto ajualarmDmin
+
+ajualarmUmin
+	bcf		PORTA,4
+	bcf		PORTA,3
+	bcf		PORTA,2
+	bsf		PORTA,5
+	;volta a exibir HHMM
+		btfsc	PORTB,0
+		goto	$+6
+		btfss	PORTB,0
+		goto	$-1
+		movlw	00000001b
+		xorwf	T1CON,f
+		goto	exibirHHMM
+
+	;limita a decrementa√ß√£o
+		movf	alarmUmin,w
+		xorlw	0
+		btfss	STATUS,Z
+		goto	$+7
+		btfsc	PORTB,1
+		goto	$+10
+		btfss	PORTB,1
+		goto	$-1
+		movlw	9		
+		movwf	alarmUmin
+	;decrementar
+		btfsc	PORTB,1
+		goto	$+4
+		btfss	PORTB,1
+		goto	$-1
+		decf	alarmUmin
+
+	;limita a incrementa√ß√£o
+		movf	alarmUmin,w		
+		xorlw	10			
+		btfss	STATUS,Z
+		goto	$+2	
+		clrf	alarmUmin
+	;incrementar
+		btfsc	PORTB,2
+		goto	$+4
+		btfss	PORTB,2
+		goto	$-1
+		incf	alarmUmin
+
+	pageselw	hex7seg
+	movf	alarmUmin,w
+	call	hex7seg
+	clrf	PCLATH
+	movwf	PORTD
+
+	call	atraso
+
+goto ajualarmUmin
+
+contagens
+
+	;bot√£o que chama a subrotina ajustHoraD
 		movlw	00000001b
 		btfsc	PORTB,0
 		goto	$+5
@@ -415,22 +879,65 @@ contagens
 		goto	$-1
 		xorwf	T1CON,f
 		call 	ajustHoraD
+		
+		;ativa o buser quando o alarme manda
+		movf	buser,w
+		xorlw	2
+		btfss	STATUS,Z
+		goto	$+4	
+		bsf		PORTC,1
+		movlw	1
+		movwf	buser
 
+	;desativa o alarme e o buzer
+		movf	alarm,w
+		xorlw	2
+		btfss	STATUS,Z
+		goto	$+10
+		movlw	00000010b
+		btfsc	PORTB,5
+		goto	$+7
+		btfss	PORTB,5
+		goto	$-1
+		xorwf alarm,f
+		clrf	buser
+		bcf		PORTC,1
+		goto	$+7
+		movlw	00000001b
+		btfsc	PORTB,5
+		goto	$+4
+		btfss	PORTB,5
+		goto	$-1
+		xorwf alarm,f
 
-
-	clrc						;Limpa o carry
-	rrf 	segu,w				;Rotaciona para direita o que est· em segu, e salva no acumulador.
-	xorlw	10					;comparaÁ„o entre o acumulador(segu) e 10. Se segu=10, xor=0. Se segu=!10, xor=1.
-	btfss	STATUS,Z			;se xor=0, Z=1, n„o pula(n„o entra no goto). Se xor=1, Z=0, pula tres linhas.
+	;silencia o buzer e mantem o alarme funcionando
+		movf	buser,w
+		xorlw	1
+		btfss	STATUS,Z
+		goto	$+2	
+		btfsc	PORTB,4
+		goto	$+8
+		btfss	PORTB,4
+		goto	$-1
+		movlw	0
+		movwf	buser
+		movlw	2
+		movwf	alarm
+		bcf		PORTC,1
+		
+	clrc						
+	rrf 	segu,w				
+	xorlw	10					
+	btfss	STATUS,Z			
 	goto	$+3
-	clrf 	segu				;zerar segu.
-	incf	segd				;incrementa segd.
+	clrf 	segu				
+	incf	segd				
 
-	movf	segd,w				;Envia o que est· em segd para o acumulador
-	xorlw 	6					;Faz um Xor entre o que est· no acumulador e 6
-	btfss	STATUS,Z			;Pula a prÛxima linha se o bit Z for 0.
+	movf	segd,w				
+	xorlw 	6					
+	btfss	STATUS,Z			
 	goto	$+3
-	clrf	segd				;Zera o Valor de segd
+	clrf	segd			
 	incf	minU		
 
 	movf	minU, w
@@ -447,8 +954,8 @@ contagens
 	clrf	minD
 	incf	horaU
 
-	movf	horaD,w			;movendo unidade de hora para o acumulador
-	xorlw	2				;
+	movf	horaD,w			
+	xorlw	2				
 	btfss	STATUS,Z
 	goto	$+8
 	movf	horaU,w
@@ -466,10 +973,10 @@ contagens
 	incf	horaD
 
 	return
-	org	200h
+	org	600h
 hex7seg
-	andlw	00001111b			;Faz a operaÁ„o and do literal com o acumulador, e salva no acumulador. Serve para garantir que ao usar o rrf, zere o carry e evita que o ultimo bit n„o fique em 1.
-	addwf	PCL,f				;Adicione w ao PCL(para dar um salto), assim a subrotina vai retornar o valor que deseja. PCL È o contador de programa.
+	andlw	00001111b			;Faz a opera√ß√£o and do literal com o acumulador, e salva no acumulador. Serve para garantir que ao usar o rrf, zere o carry e evita que o ultimo bit n√£o fique em 1.
+	addwf	PCL,f				;Adicione w ao PCL(para dar um salto), assim a subrotina vai retornar o valor que deseja. PCL √© o contador de programa.
 
 	retlw	00111111b	;0	
 	retlw	00000110b	;1
@@ -487,4 +994,40 @@ hex7seg
 		retlw	01011110b	;d
 		retlw	01111001b	;E
 		retlw	01110001b	;F	
+
+funAlarme
+	;faz a compara√ß√£o entre o valor na entrada de alarm com o hor√°rio atual, at√© que seja 0
+		movf	alarmDhora,w
+		movwf	temp		
+		movf	horaD,w		
+		subwf	temp		
+		btfss	STATUS,Z	
+		goto	$+23		
+
+		movf	alarmUhora,w
+		movwf	temp
+		movf	horaU,w
+		subwf	temp
+		btfss	STATUS,Z
+		goto	$+17
+
+		movf	alarmDmin,w
+		movwf	temp
+		movf	minD,w
+		subwf	temp
+		btfss	STATUS,Z
+		goto	$+11
+
+		movf	alarmUmin,w
+		movwf	temp
+		movf	minU,w
+		subwf	temp
+		btfss	STATUS,Z
+		goto	$+5	
+		movlw	2		
+		movwf	buser	
+		movlw	2
+		movwf	alarm
+	return
+	
 	end
