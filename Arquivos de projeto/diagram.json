@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "author": "Uri Shaked",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 21.6,
+      "left": 126.6,
+      "attrs": { "volume": "0.1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn-red",
+      "top": 6.2,
+      "left": 48,
+      "attrs": { "color": "red", "key": "1", "label": "1" }
+    },
+    {
+      "type": "board-esp32-c3-devkitm-1",
+      "id": "esp",
+      "top": 136.02,
+      "left": 120.9,
+      "rotate": 90,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:GND.1", "buzzer:1", "black", [ "v-9.6", "h-19.2", "v-38.4", "h-57.6" ] ],
+    [ "esp:2", "btn-red:2.r", "orange", [ "v-24", "h-76.8", "v-110.6" ] ],
+    [ "esp:GND.1", "btn-red:1.l", "black", [ "v-9.6", "h-188.4", "v-144" ] ],
+    [ "esp:10", "buzzer:2", "purple", [ "v-57.6", "h29.2" ] ]
+  ],
+  "dependencies": {}
+}
